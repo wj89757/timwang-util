@@ -4,6 +4,7 @@ import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.net.URLEncoder;
+import cn.hutool.core.util.URLUtil;
 import cn.hutool.http.HttpUtil;
 import com.timwang.util.baidu.constant.UrlList;
 import com.timwang.util.baidu.ocr.handwriting.result.HandWritingResult;
@@ -24,19 +25,34 @@ public class AccurateBasicUtil {
     public static HandWritingResult accurateBasic(String filePath) {
         try {
             byte[] imgData = FileUtil.readBytes(filePath);
-            String imgStr = Base64.encode(imgData);
-            String imgParam = URLEncoder.createDefault().encode(imgStr, Charset.defaultCharset());
-            String accessToken = AuthService.getAuth();
-            String result = HttpUtil.post(String.format(UrlList.ACCURATE_BASIC_URL, accessToken), MapUtil.of("image", imgParam));
-            return JsonUtils.fromJson(result, HandWritingResult.class);
+            return accurateBasic(imgData);
         } catch (Exception e) {
             logger.error("accurate basic ex", e);
         }
         return null;
     }
 
+    public static HandWritingResult accurateBasicFromUrl(String url) {
+        try {
+            byte[] imgData = HttpUtil.downloadBytes(url);
+            return accurateBasic(imgData);
+        } catch (Exception e) {
+            logger.error("accurate basic ex", e);
+        }
+        return null;
+    }
+
+    public static HandWritingResult accurateBasic(byte[] imgData) {
+        String imgStr = Base64.encode(imgData);
+        String imgParam = URLEncoder.createDefault().encode(imgStr, Charset.defaultCharset());
+        String accessToken = AuthService.getAuth();
+        String result = HttpUtil.post(String.format(UrlList.ACCURATE_BASIC_URL, accessToken), MapUtil.of("image", imgParam));
+        return JsonUtils.fromJson(result, HandWritingResult.class);
+    }
+
     public static void main(String[] args) {
-        HandWritingResult handWritingResult = accurateBasic("/Users/wangjun/Downloads/下载.png");
+//        HandWritingResult handWritingResult = accurateBasic("/Users/wangjun/Downloads/下载.png");
+        HandWritingResult handWritingResult = accurateBasicFromUrl("https://tva1.sinaimg.cn/large/0081Kckwgy1gk8i1zcks8j31ao0t4dr9.jpg");
         System.out.println(JsonUtils.toJson(handWritingResult));
     }
 }
